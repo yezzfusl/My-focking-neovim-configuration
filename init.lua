@@ -215,15 +215,23 @@ require("lazy").setup({
   {
     "hrsh7th/nvim-cmp",
     dependencies = {
+      "hrsh7th/cmp-nvim-lsp",
       "hrsh7th/cmp-buffer",
       "hrsh7th/cmp-path",
-      "L3MON4D3/LuaSnip",
+      "hrsh7th/cmp-cmdline",
+      "hrsh7th/cmp-calc",
+      "hrsh7th/cmp-emoji",
+      "f3fora/cmp-spell",
+      "ray-x/cmp-treesitter",
       "saadparwaiz1/cmp_luasnip",
+      "L3MON4D3/LuaSnip",
       "rafamadriz/friendly-snippets",
       "onsails/lspkind.nvim",
+      "dmitmel/cmp-cmdline-history",
+      "hrsh7th/cmp-nvim-lua",
+      "andersevenrud/cmp-tmux",
     },
   },
-
   -- Treesitter
   {
     "nvim-treesitter/nvim-treesitter",
@@ -606,6 +614,7 @@ require("clangd_extensions").setup {
 }
 
 -- Autocompletion setup
+-- Autocompletion setup
 local cmp = require("cmp")
 local luasnip = require("luasnip")
 local lspkind = require("lspkind")
@@ -645,21 +654,69 @@ cmp.setup({
       end
     end, { "i", "s" }),
   }),
-  sources = {
+  sources = cmp.config.sources({
     { name = "nvim_lsp" },
     { name = "luasnip" },
     { name = "buffer" },
     { name = "path" },
-  },
+    { name = "calc" },
+    { name = "emoji" },
+    { name = "treesitter" },
+    { name = "crates" },
+    { name = "tmux" },
+  }),
   formatting = {
     format = lspkind.cmp_format({
       mode = "symbol_text",
       maxwidth = 50,
       ellipsis_char = "...",
+      before = function(entry, vim_item)
+        vim_item.menu = ({
+          nvim_lsp = "[LSP]",
+          luasnip = "[Snippet]",
+          buffer = "[Buffer]",
+          path = "[Path]",
+          calc = "[Calc]",
+          emoji = "[Emoji]",
+          treesitter = "[Treesitter]",
+          crates = "[Crates]",
+          tmux = "[TMUX]",
+        })[entry.source.name]
+        return vim_item
+      end
     }),
+  },
+  experimental = {
+    ghost_text = true,
   },
 })
 
+-- Set configuration for specific filetype.
+cmp.setup.filetype("gitcommit", {
+  sources = cmp.config.sources({
+    { name = "cmp_git" },
+  }, {
+    { name = "buffer" },
+  })
+})
+
+-- Use buffer source for `/` and `?` (if you enabled `native_menu`, this won't work anymore).
+cmp.setup.cmdline({ "/", "?" }, {
+  mapping = cmp.mapping.preset.cmdline(),
+  sources = {
+    { name = "buffer" }
+  }
+})
+
+-- Use cmdline & path source for ':' (if you enabled `native_menu`, this won't work anymore).
+cmp.setup.cmdline(":", {
+  mapping = cmp.mapping.preset.cmdline(),
+  sources = cmp.config.sources({
+    { name = "path" }
+  }, {
+    { name = "cmdline" }
+  })
+})
 -- Treesitter configuration
 require("nvim-treesitter.configs").setup({
   ensure_installed = { "c", "cpp", "lua", "vim", "vimdoc", "javascript", "python", "rust", "dart" },
